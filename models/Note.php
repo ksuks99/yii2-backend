@@ -34,7 +34,7 @@ class Note extends \yii\db\ActiveRecord
             [['ful_name'], 'string', 'max' => 700],
             [['login'], 'string', 'max' => 110],
             [['email', 'password'], 'string', 'max' => 100],
-            [['id'], 'unique'],
+            [['id'], 'unique'], // show ID "123" has already been taken.
         ];
     }
 
