@@ -16,15 +16,11 @@ use yii\web\NotFoundHttpException;
 
 class ApiController extends Controller // /api
 {
-  // public $serializer = [
-  //   'class' => 'yii\rest\Serializer',
-  //   'collectionEnvelope' => 'items',
-  // ];
+  public $enableCsrfValidation = false;
 
   public function actionTest() // api/test
   {
     \Yii::$app->response->format = Response::FORMAT_JSON;
-    // $model = new \app\models\ContactForm;
     $response = \Yii::$app->response;
     throw new HttpException(404, 'The requested Item could not be found.');
     return [
@@ -39,7 +35,6 @@ class ApiController extends Controller // /api
     // convert array to JSON
     \Yii::$app->response->format = Response::FORMAT_JSON;
     $request = Yii::$app->getRequest();
-    // $myData=(object)$request->bodyParams['message'];
     $id = $request->get('id', null);
     if ($id === null) { // 0 == null
       // return Note::findBySql("SELECT * FROM note")->all();
@@ -51,19 +46,42 @@ class ApiController extends Controller // /api
   public function actionInsert() // api/insert
   {
     \Yii::$app->response->format = Response::FORMAT_JSON;
-    // $request = Yii::$app->getRequest();
-    $request = $this->request;
-    $post = $request->post();
+    $data = $this->request->post();
 
-    return $post;
+    $model = new Note();
+    $model->attributes = $data;
+    $model->save();
+
+    return $model;
   }
 
-  public function beforeAction($action)
+  public function actionDelete($id)
   {
-    if ($action->id === 'insert') {
-      
+    \Yii::$app->response->format = Response::FORMAT_JSON;
+    $model = Note::findOne($id);
+
+    if ($model === null) {
+      return ["deleted" => false, "id" => intval($id)];
     }
-    return parent::beforeAction($action);
+      
+    $model->delete();
+    return ["deleted" => true, "id" => intval($id)];
+  }
+
+  public function actionUpdate($id)
+  {
+    \Yii::$app->response->format = Response::FORMAT_JSON;
+    $model = Note::findOne($id);
+
+    if ($model === null) {
+      return ["updated" => false, "id" => intval($id)];
+    }
+
+    $data = $this->request->post();
+    $model->attributes = $data;
+    $model->save();
+
+    return $data;
   }
 
   protected function findModel($id)
