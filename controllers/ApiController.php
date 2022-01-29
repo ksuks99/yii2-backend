@@ -14,15 +14,44 @@ use app\models\Note;
 use yii\web\HttpException;
 use yii\web\NotFoundHttpException;
 
+use yii\filters\Cors;
+use yii\helpers\ArrayHelper;
+use yii\filters\auth\HttpBasicAuth;
+
 class ApiController extends Controller // /api
 {
-  public $enableCsrfValidation = false;
+  public function init()
+  {
+      parent::init();
+      \Yii::$app->user->enableSession = false;
+  }
+
+  public function behaviors()
+  {
+    $behaviors = ArrayHelper::merge([
+      [
+          'class' => Cors::class,
+          'cors' => [
+              'Origin' => ['*'],
+              'Access-Control-Request-Method' => ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'],
+              'Access-Control-Request-Headers' => ['*'], // ['Content-Type', 'Authorization'],
+          ],
+      ],
+    ], parent::behaviors());
+    $behaviors['authenticator'] = [
+      'class' => HttpBasicAuth::class,
+    ];
+    return $behaviors;
+  }
+
+  public function actionLogin()
+  {
+    return "hello";
+  }
 
   public function actionTest() // api/test
   {
-    \Yii::$app->response->format = Response::FORMAT_JSON;
     $response = \Yii::$app->response;
-    throw new HttpException(404, 'The requested Item could not be found.');
     return [
       "isSuccessful" => $response->isSuccessful, 
       "statusCode" => $response->statusCode, 
@@ -32,8 +61,6 @@ class ApiController extends Controller // /api
 
   public function actionGet() // api/get
   {
-    // convert array to JSON
-    \Yii::$app->response->format = Response::FORMAT_JSON;
     $request = Yii::$app->getRequest();
     $id = $request->get('id', null);
     if ($id === null) { // 0 == null
@@ -45,19 +72,20 @@ class ApiController extends Controller // /api
 
   public function actionInsert() // api/insert
   {
-    \Yii::$app->response->format = Response::FORMAT_JSON;
     $data = $this->request->post();
 
+    if (Note::findOne($data["id"]) !== null) {
+      return ["error" => true, "id" => $data["id"]];
+    }
     $model = new Note();
     $model->attributes = $data;
     $model->save();
 
-    return $model;
+    return ["error" => false, "id" => $model->id];
   }
 
-  public function actionDelete($id)
+  public function actionDelete($id) // api/delete
   {
-    \Yii::$app->response->format = Response::FORMAT_JSON;
     $model = Note::findOne($id);
 
     if ($model === null) {
@@ -68,9 +96,9 @@ class ApiController extends Controller // /api
     return ["deleted" => true, "id" => intval($id)];
   }
 
-  public function actionUpdate($id)
+  public function actionUpdate($id) // api/update
   {
-    \Yii::$app->response->format = Response::FORMAT_JSON;
+    
     $model = Note::findOne($id);
 
     if ($model === null) {
@@ -81,7 +109,16 @@ class ApiController extends Controller // /api
     $model->attributes = $data;
     $model->save();
 
-    return $data;
+    return ["updated" => true, "id" => intval($id)];;
+  }
+
+  public function beforeAction($action)
+  {
+    \Yii::$app->response->format = Response::FORMAT_JSON;
+    // CORS works
+    // Yii::$app->response->headers->set('Access-Control-Allow-Origin', 'http://localhost:8081');
+    // Yii::$app->response->headers->set("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+    return parent::beforeAction($action);
   }
 
   protected function findModel($id)

@@ -25,7 +25,8 @@ $config = [
         ],
         'user' => [
             'identityClass' => 'app\models\User',
-            'enableAutoLogin' => true,
+            // cookies
+            'enableAutoLogin' => false,
         ],
         'errorHandler' => [
             'errorAction' => 'site/error',
@@ -57,6 +58,7 @@ $config = [
                     'pluralize' => false,
                     'controller' => ['api'],
                 ],
+                '' => 'site/index',
             ],
         ],
         
@@ -67,6 +69,8 @@ $config = [
 if (YII_ENV_DEV) {
     // fix reloading site.css
     $config['components']['assetManager']['forceCopy'] = true;
+    // disable csrf validation
+    $config['components']['request']['enableCsrfValidation'] = false;
 
     // configuration adjustments for 'dev' environment
     $config['bootstrap'][] = 'debug';
